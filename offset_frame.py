@@ -117,6 +117,7 @@ class curve_adjust_OP(bpy.types.Operator):
         name="Curve_coef",
         description="Coefficient of Curves",
         default=0.05,
+        min=0,max=1,
     )
 
     def execute(self, context):
