@@ -46,11 +46,14 @@ class offset_frame_OP(bpy.types.Operator):
             # 排除不带关键帧的物体
             if(obj.animation_data != None):
                 s_objarr.append(obj)
-
-        for i,obj in enumerate(s_objarr):
-            # offset_key(obj,i*1)
-            offset_key(obj,i*self.frame_num)
-
+        if(s_objarr == []):
+            return{'FINISHED'}
+        if(len(objarr)>1 and len(s_objarr)>1):
+            for i,obj in enumerate(s_objarr):
+                # offset_key(obj,i*1)
+                offset_key(obj,i*self.frame_num)
+        elif(len(objarr)==1 and len(s_objarr)==1):
+            offset_key(objarr[0],self.frame_num)
         bpy.context.view_layer.update() 
         return{'FINISHED'}
     
