@@ -159,6 +159,58 @@ class curve_adjust_OP(bpy.types.Operator):
         bpy.context.view_layer.update() 
         return{'FINISHED'}
         
+class curve_adjust_Select_OP(bpy.types.Operator):
+    bl_idname = "object.curve_adjust_select"
+    bl_label = "curve_adjust_select"
+    bl_options = {'REGISTER','UNDO'}
+    
+    curve_coef:bpy.props.FloatProperty(
+        name="Curve_coef",
+        description="Coefficient of Curves",
+        default=0.05,
+        min=0,max=1,
+    )
+
+    def execute(self, context):
+        def lerp(a: float, b: float, t: float) -> float:
+            return (1 - t) * a + t * b
+
+        # 获取选择对象
+        objarr = bpy.context.selected_objects
+        obj = bpy.context.object
+
+        coef = self.curve_coef
+
+        def obj_keyframe_curves_adjust(obj,coef):
+            if(obj.animation_data == None):
+                return
+            # 获取属性的动画曲线数据
+            fcurves = obj.animation_data.action.fcurves
+
+            # 遍历每个 fcurve
+            for fcurve in fcurves:
+                key_pts = fcurve.keyframe_points
+                if len(key_pts)<2:
+                    continue
+                # 遍历该属性的所有关键帧
+                for i,keyframe in enumerate(key_pts):
+                    if(keyframe.select_control_point==True):
+                        if(i == 0):
+                            keyframe.handle_right[0] = lerp(keyframe.co[0],key_pts[i+1].co[0],coef)
+                            continue
+                        if(i == len(key_pts)-1):
+                            keyframe.handle_left[0]  = lerp(key_pts[i-1].co[0],keyframe.co[0],coef)
+                            continue
+                        # 移动关键帧到新的帧位置
+                        keyframe.handle_right[0] = lerp(keyframe.co[0],key_pts[i+1].co[0],coef)
+                        keyframe.handle_left[0] = lerp(key_pts[i-1].co[0],keyframe.co[0],coef)
+        
+        for obj in objarr:
+            obj_keyframe_curves_adjust(obj,coef)        
+        
+        bpy.context.view_layer.update() 
+        return{'FINISHED'}
+
 class HT_drawUI(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -175,6 +227,8 @@ class HT_drawUI(bpy.types.Panel):
             text='Align')
         col.operator('object.curve_adjust',
             text='Curve_Adjust')
+        col.operator('object.curve_adjust_select',
+            text='Curve_Adjust_Select')
         # props = col.operator('object.offset_frame',
         #     text='Offset 1 Frame')
         # props.frames_num = 1
@@ -186,6 +240,7 @@ blender_classes = [
     offset_frame_OP,
     align_frame_OP,
     curve_adjust_OP,
+    curve_adjust_Select_OP,
     HT_drawUI
 ]
 
